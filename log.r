@@ -22,4 +22,143 @@ sort.10 <- bc.2010[order(bc.2010$Facility),]
 sort.10 = sort.10[-1,]
 View(sort.10)
 
+sort.11 <- bc_2011[order(bc_2011$Facility),]
+sort.11 = sort.11[-1,]
+View(sort.11)
 
+sort.12 <- bc_2012[order(bc_2012$Facility),]
+sort.12 = sort.12[-1,]
+View(sort.12)
+
+#Now all years are sorted alphabetically - now we have to compare totals across years by facility.
+
+#To do this we'll need to merge. Before then, let's append colnames to include the year so we're clear.
+#We do this with the package stringr.
+
+require(stringr)
+
+# Example: 
+# nam <- names(mydf)
+# names(mydf) <- ifelse(nam %in% c('X', 'A', 'Z'), 
+#                      str_c(nam, '.ovca'),  str_c(nam, '.ctrls'))
+
+nam <- names(sort.10)
+names(sort.10) <- ifelse(nam %in% c("Total.Stationary.Combusion",
+                                    "Total.Industrial.Process","Total.Flaring",
+                                    "Total.Venting","Total.Fugitive",
+                                    "Total.On.site.Transportation",
+                                    "Total.Waste","Total.Wastewater",
+                                    "Total.Combined.Industrial.Process.and.Stationary.Combustion",
+                                    "Total.Emissions..tonnes.CO2e."), 
+                         str_c(nam, '.2010'), str_c(nam, ''))
+View(sort.10)
+
+#Success! Now the other two:
+
+nam <- names(sort.11)
+names(sort.11) <- ifelse(nam %in% c("Total.Stationary.Combusion",
+                                    "Total.Industrial.Process","Total.Flaring",
+                                    "Total.Venting","Total.Fugitive",
+                                    "Total.On.site.Transportation",
+                                    "Total.Waste","Total.Wastewater",
+                                    "Total.Combined.Industrial.Process.and.Stationary.Combustion",
+                                    "Total.Emissions..tonnes.CO2e."), 
+                         str_c(nam, '.2011'), str_c(nam, ''))
+View(sort.11)
+
+nam <- names(sort.12)
+names(sort.12) <- ifelse(nam %in% c("Total.Stationary.Combusion",
+                                    "Total.Industrial.Process","Total.Flaring",
+                                    "Total.Venting","Total.Fugitive",
+                                    "Total.On.site.Transportation",
+                                    "Total.Waste","Total.Wastewater",
+                                    "Total.Combined.Industrial.Process.and.Stationary.Combustion",
+                                    "Total.Emissions..tonnes.CO2e."), 
+                         str_c(nam, '.2012'), str_c(nam, ''))
+View(sort.12)
+
+#Great! Time to merge
+all.fac <- merge(sort.10, sort.11, by='Facility', all.x=TRUE, all.y=TRUE)
+all.fac <- merge(all.fac, sort.12, by='Facility', all.x=TRUE, all.y=TRUE)
+View(all.fac)
+
+#Merged done, now we break it up into what we want. Combustion levels by facility:
+all.fac.comb <- data.frame(all.fac[,c(1, 2, 3, 14, 25)])
+require(ggplot2)
+plot(all.fac.comb)
+
+#Now we run into a little trouble - too many! So let's rank them by the top emissions in 2010
+#(then we'll try a plot).
+
+combustion_totals <- all.fac.comb[order(all.fac.comb$Total.Stationary.Combusion.2010, decreasing = TRUE),]
+combustion_totals <- data.frame(combustion_totals)
+write.table(combustion_totals, "/Users/michael/combustion.totals.csv", sep=",", row.names=TRUE)
+
+#########################
+#Now to get sorting - let's look at the taxed v. untaxed question.
+
+#I decided to make three spreadsheets of this - top 25 combustion, top 25 everything else, & BC aggregated separated.
+
+#Top 25 combustion (minus BC)
+View(all.fac.comb)
+all.fac.comb.bc.aggregated <- all.fac.comb[grep("BC Aggregated Facilities",all.fac.comb$Facility),]
+write.table(all.fac.comb.bc.aggregated, "/Users/michael/Desktop/bc.aggregated.csv", sep=",", row.names=TRUE)
+#Sorted these after since I forgot, but this outputs all the bc aggregated fac's by 2010 combustion levels.
+
+#Top 25 combustion w/o bc sorted by 2010:
+all.fac.comb.no.bc <- all.fac.comb[-grep("BC Aggregated Facilities", all.fac.comb$Facility),]
+View(all.fac.comb.no.bc)
+
+all.fac.comb.no.bc.sort <- all.fac.comb.no.bc[order(all.fac.comb.no.bc$Total.Stationary.Combusion.2010),]
+write.table(all.fac.comb.no.bc.sort, "/Users/michael/Desktop/top.comb.no.bc.csv", sep=",", row.names=TRUE)
+
+#Top 25 everything else
+all.fac.else <- data.frame(all.fac[,c(1, 2, 4, 5, 6, 7, 8, 9, 10, 15:21, 26:32)])
+View(all.fac.else)
+
+#Need to make total for all else - let's do that.
+#Doing this in libre since it's a pain in R.
+write.table(all.fac.else, "/Users/michael/Desktop/all.fac.else.csv", sep=",", row.names=TRUE)
+
+all.fac.else <- read.csv("~/Documents/Data/bc-emissions/all.fac.else.csv")
+View(all.fac.else)
+
+all.fac.else.totals <- data.frame(all.fac.else[,c(1, 2, 10, 18, 26)])
+all.fac.else.totals <- all.fac.else.totals[order(all.fac.else.totals$Total.untaxed.2010, decreasing=TRUE),]
+View(all.fac.else.totals)
+
+#These have BC up there again - let's take those out and subset
+
+all.fac.else.bc.aggregated <- all.fac.else.totals[grep("BC Aggregated Facilities",all.fac.else.totals$Facility),]
+write.table(all.fac.else.bc.aggregated, "/Users/michael/Desktop/all.fac.else.bc.aggregated.csv", sep=",", row.names=TRUE)
+all.fac.else.no.bc <- all.fac.else.totals[-grep("BC Aggregated Facilities", all.fac.else.totals$Facility),]
+write.table(all.fac.else.no.bc, "/Users/michael/Desktop/all.fac.else.no.bc.csv", sep=",", row.names=TRUE)
+View(all.fac.else.bc.aggregated)
+View(all.fac.else.no.bc)
+
+#Okay cool. Now for the easy stuff (ha!). Let's total everything and compare. Doing this in
+#libre again since summing factors is difficult.
+
+all.fac.totals <- read.csv("~/Documents/Data/bc-emissions/all.fac.totals.csv")
+View(all.fac.totals)
+
+all.fac.totals.m <- melt(all.fac.totals, id.vars="Type", value.name="Emissions", variable.name="Year")
+View(all.fac.totals.m)
+
+#require(scales) to clean axis labels
+require(scales)
+
+  ggplot(data=all.fac.totals.m, aes(x=variable, y=value, group = Type, colour = Type)) +
+  geom_line() +
+  geom_point( size=4, shape=21, fill="white") +
+  scale_y_continuous(labels = comma) + 
+  labs(title = "BC Emission Totals (taxed v. untaxed))", x="Year", y="Emission level (tons)", size=10)
+
+#Graphed! Make sure to confirm numbers later.
+
+#Now let's look at Chevron and Spectra. Saving spreadsheets too.
+
+all.fac.chev <- all.fac[grep("Chevron",all.fac$Facility),]
+all.fac.spec <- all.fac[grep("Spectra",all.fac$Company.x),]
+write.table(all.fac.spec, "/Users/michael/desktop/spectra.csv", sep=",", row.names=TRUE)
+write.table(all.fac.chev, "/Users/michael/desktop/chevron.csv", sep=",", row.names=TRUE)

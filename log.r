@@ -1,5 +1,9 @@
 #Seattle Times - data understanding of BC emissions info
 
+#NOTE::: several of the spreadsheets created with this are inaccurate, due to
+#source data having '-''s instead of '0''s for missing data - this causes
+#sums to have subtractions. If re-making this project, be careful that doesn't happen.
+
 #Pull in data
 bc.2010 <- read.csv("~/Documents/Data/bc-emissions/bc-data/bc-2010.csv")
 bc_2011 <- read.csv("~/Documents/Data/bc-emissions/bc-data/bc_2011.csv")
@@ -156,9 +160,94 @@ require(scales)
 
 #Graphed! Make sure to confirm numbers later.
 
-#Now let's look at Chevron and Spectra. Saving spreadsheets too.
+#Now let's look at Chevron and Spectra. Saving spreadsheets also -
 
 all.fac.chev <- all.fac[grep("Chevron",all.fac$Facility),]
 all.fac.spec <- all.fac[grep("Spectra",all.fac$Company.x),]
 write.table(all.fac.spec, "/Users/michael/desktop/spectra.csv", sep=",", row.names=TRUE)
 write.table(all.fac.chev, "/Users/michael/desktop/chevron.csv", sep=",", row.names=TRUE)
+
+#Hal wants to know the greatest differenece between these - which will 
+#just require a bit of subtraction. Ex: df$V3 <- df$V1 - df$V2
+
+all.fac.else.total$diff.11.10 <- all.fac.else.total$Total.untaxed.2011 - all.fac.else.total$Total.untaxed.2010
+all.fac.else.total$diff.12.11 <- all.fac.else.total$Total.untaxed.2012 - all.fac.else.total$Total.untaxed.2011
+all.fac.else.total <- all.fac.else.total[,c(1,2,3,6,4,7,5)]
+all.fac.else.total <- all.fac.else.total[order(all.fac.else.total$diff.11.10, decreasing=TRUE),]
+View(all.fac.else.total)
+all.fac.else.total.no.bc <- all.fac.else.total[-grep("BC Aggregated Facilities", all.fac.else.total$Facility),]
+View(all.fac.else.total.no.bc)
+
+#K, now we have the biggest differences (bc and not) between 2011 and 2010.
+
+write.table(all.fac.else.total, "/Users/michael/desktop/untaxed.difference.11.10.csv", sep=",", row.names=TRUE)
+write.table(all.fac.else.total.no.bc, "/Users/michael/desktop/untaxed.difference.no.bc.11.10.csv", sep=",", row.names=TRUE)
+
+#Here's the biggest diffs between 2012 and 2011.
+all.fac.else.total <- all.fac.else.total[order(all.fac.else.total$diff.12.11, decreasing=TRUE),]
+View(all.fac.else.total)
+
+write.table(all.fac.else.total, "/Users/michael/desktop/untaxed.difference.12.11.csv", sep=",", row.names=TRUE)
+write.table(all.fac.else.total.no.bc, "/Users/michael/desktop/untaxed.difference.no.bc.12.11.csv", sep=",", row.names=TRUE)
+
+#Then the same for combustion
+
+all.fac.comb$diff.11.10 <- all.fac.comb$Total.Stationary.Combusion.2011 - all.fac.comb$Total.Stationary.Combusion.2010
+all.fac.comb$diff.12.11 <- all.fac.comb$Total.Stationary.Combusion.2012 - all.fac.comb$Total.Stationary.Combusion.2011
+all.fac.comb <- all.fac.comb[,c(1,2,3,6,4,7,5)]
+View(all.fac.comb)
+
+#For some reason these are still in factors, so I'll need to do the subtraction in libre. Doing now
+write.table(all.fac.comb, "/Users/michael/desktop/all.fac.comb.csv", sep=",", row.names=TRUE)
+
+all.fac.comb <- all.fac.comb[order(all.fac.comb$diff.11.10, decreasing=FALSE),]
+
+
+
+View(all.fac.comb)
+write.table(all.fac.comb, "/Users/michael/desktop/combustion.difference.11.10.csv", sep=",", row.names=TRUE)
+
+#####
+#Outside of this mess, got the .csv fixed in excel, now converting
+all.fac.comb$diff.11.10 <- as.numeric(as.character(all.fac.comb$diff.11.10))
+all.fac.comb$diff.12.11 <- as.numeric(as.character(all.fac.comb$diff.12.11))
+all.fac.comb <- all.fac.comb[order(all.fac.comb$diff.11.10, decreasing=TRUE),]
+View(all.fac.comb)
+
+#YES
+write.table(all.fac.comb, "/Users/michael/desktop/combustion.difference.11.10.csv", sep=",", row.names=TRUE)
+
+all.fac.comb <- all.fac.comb[order(all.fac.comb$diff.12.11, decreasing=TRUE),]
+View(all.fac.comb)
+
+write.table(all.fac.comb, "/Users/michael/desktop/combustion.difference.12.11.csv", sep=",", row.names=TRUE)
+
+#and without BC
+
+all.fac.comb.no.bc <- all.fac.comb[-grep("BC Aggregated Facilities", all.fac.comb$Facility),]
+View(all.fac.comb.no.bc)
+all.fac.comb.no.bc <- all.fac.comb.no.bc[order(all.fac.comb.no.bc$diff.11.10, decreasing=TRUE),]
+View(all.fac.comb.no.bc)
+write.table(all.fac.comb, "/Users/michael/desktop/combustion.difference.no.bc.11.10.csv", sep=",", row.names=TRUE)
+
+all.fac.comb.no.bc <- all.fac.comb.no.bc[order(all.fac.comb.no.bc$diff.12.11, decreasing=TRUE),]
+write.table(all.fac.comb, "/Users/michael/desktop/combustion.difference.no.bc.12.11.csv", sep=",", row.names=TRUE)
+
+
+#Note- there are zeros in company names here, but only because they were not entered - not a computer error.
+
+#Sort of lastly, diffs 10-12. Did this in excel for speed.
+all.fac.comb <- read.csv("~/Documents/Data/bc-emissions/all.fac.comb.csv")
+View(all.fac.comb)
+
+all.fac.comb <- all.fac.comb[order(all.fac.comb$diff.12.10, decreasing=TRUE),]
+write.table(all.fac.comb, "/Users/michael/desktop/combustion.difference.12.10.csv", sep=",", row.names=TRUE)
+---------
+
+all.fac.comb.no.bc <- all.fac.comb.no.bc[order(all.fac.comb.no.bc$diff.12.10, decreasing=TRUE),]
+write.table(all.fac.comb, "/Users/michael/desktop/combustion.difference.no.bc.11.10.csv", sep=",", row.names=TRUE)
+
+all.fac.comb.no.bc <- all.fac.comb.no.bc[order(all.fac.comb.no.bc$diff.12.11, decreasing=TRUE),]
+write.table(all.fac.comb, "/Users/michael/desktop/combustion.difference.no.bc.12.11.csv", sep=",", row.names=TRUE)
+
+
